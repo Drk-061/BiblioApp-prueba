@@ -1,0 +1,66 @@
+### REST Client (VS Code): reemplaza matrícula/password. La API debe estar iniciada.
+@host = http://localhost:3000
+@token = PEGA_AQUI_TOKEN_DE_LOGIN
+
+### Salud
+GET {{host}}/api/salud
+
+### Registro cliente
+POST {{host}}/api/auth/registro
+Content-Type: application/json
+
+{"matricula":"CLI0001","nombres":"Cliente","apellidoPaterno":"Prueba","apellidoMaterno":"Uno","correo":"cliente1@example.edu.mx","contrasena":"Ejemplo2026!","tipoUsuario":"CLIENTE"}
+
+### Login admin (reemplazar credenciales)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{"matricula":"ADMIN001","contrasena":"PASSWORD_ADMIN_QUE_CONFIGURASTE"}
+
+### Leer habilitación registro encargado
+GET {{host}}/api/registro/encargados/disponibilidad
+
+### Habilitar registro encargado
+PATCH {{host}}/api/admin/configuracion/registro-encargados
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{"habilitado":true}
+
+### Alta de encargado (queda pendiente)
+POST {{host}}/api/auth/registro
+Content-Type: application/json
+
+{"matricula":"ENC0001","nombres":"Encargada","apellidoPaterno":"Prueba","apellidoMaterno":"Uno","correo":"enc1@example.edu.mx","contrasena":"Ejemplo2026!","tipoUsuario":"ENCARGADO"}
+
+### Solicitudes por aprobar
+GET {{host}}/api/admin/solicitudes-encargado
+Authorization: Bearer {{token}}
+
+### Aprobar: cambia el 1 por el id real de solicitud
+PATCH {{host}}/api/admin/solicitudes-encargado/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"aprobar":true}
+
+### Registrar libro + 2 ejemplares QR
+POST {{host}}/api/libros
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"isbn":"9788498383621","titulo":"Libro de prueba","autor":"Autor Ejemplo","editorial":"Editorial Prueba","edicion":"1","anioPublicacion":2024,"numeroPaginas":100,"idioma":"Español","categoria":"PROGRAMACION","cantidadEjemplares":2,"ubicacion":"Estante A-03"}
+
+### Consultar catálogo
+GET {{host}}/api/libros
+
+### Registrar préstamo (reemplaza las claves EJ... por las creadas)
+POST {{host}}/api/prestamos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{"matricula":"CLI0001","ejemplares":["EJ-CLAVE-UNO","EJ-CLAVE-DOS"]}
+
+### Visualizar préstamos
+GET {{host}}/api/prestamos
+Authorization: Bearer {{token}}

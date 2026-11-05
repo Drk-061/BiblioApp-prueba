@@ -1,0 +1,5 @@
+export type UsuarioGestion={matricula:string;nombre:string;correo:string|null;rol:'CLIENTE'|'ENCARGADO'|'ADMIN';estado:string;prestamosActivos:number;adeudo:string|number};
+export type MultaReal={id:string;prestamoId:string;detalleId:number|null;motivo:string;descripcion:string|null;fechaGenerada:string;monto:number|string;estado:'PENDIENTE'|'PAGADA'|'CANCELADA';fechaPago:string|null;matricula:string;nombre:string;fechaLimite:string;fechaDevolucion:string|null;codigoEjemplar:string|null;titulo:string|null;diasRetraso:number};
+export type IncidenciaReal={id:string;detalleId:number;reportadoPor:string;fechaReporte:string;descripcion:string;estado:'ACTIVA'|'EN_PROCESO'|'RESUELTA';fechaResolucion:string|null;resolucion:string|null;prestamoId:string;matricula:string;nombre:string;codigoEjemplar:string;titulo:string};
+export type AvisoReal={id:string;tipo:string;titulo:string;mensaje:string;fecha:string;leida:boolean};
+export type SolicitudBaja={id:number;matricula:string;nombre:string;motivo:string;estado:string;fecha:string};

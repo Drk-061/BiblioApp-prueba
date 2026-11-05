@@ -1,18 +1,42 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { Stack } from 'expo-router';
+import { COLORS } from '../constants/colors';
+import { LibrosProvider } from '../context/LibrosContext';
+import { PrestamosProvider } from '../context/PrestamosContext';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
 
-SplashScreen.preventAutoHideAsync();
+// NUEVO: proveedor de autenticación
+import { SessionProvider } from '../context/SessionContext';
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <SessionProvider>
+      <LibrosProvider>
+        <PrestamosProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: {
+                backgroundColor: COLORS.navy,
+              },
+            }}
+          />
+        </PrestamosProvider>
+      </LibrosProvider>
+    </SessionProvider>
   );
 }
+
+
+/** Mantiene el estado de Libros y Préstamos al cambiar de pantalla. 
+export default function RootLayout() {
+  return (
+    <LibrosProvider>
+      <PrestamosProvider>
+        <Stack screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: COLORS.navy },
+        }} />
+      </PrestamosProvider>
+    </LibrosProvider>
+  );
+}*/

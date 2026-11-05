@@ -1,0 +1,34 @@
+@api = http://localhost:3000
+@token = REEMPLAZAR_CON_JWT_DEL_LOGIN
+@libroId = REEMPLAZAR_CON_ID_LIBRO
+@prestamoId = REEMPLAZAR_CON_ID_PRESTAMO
+### Salud
+GET {{api}}/api/salud
+### Perfil
+GET {{api}}/api/auth/me
+Authorization: Bearer {{token}}
+### Libros
+GET {{api}}/api/libros
+### Ejemplares
+GET {{api}}/api/libros/{{libroId}}/ejemplares
+### Préstamos por rol
+GET {{api}}/api/prestamos
+Authorization: Bearer {{token}}
+### Multas por rol
+GET {{api}}/api/multas
+Authorization: Bearer {{token}}
+### Incidencias por rol
+GET {{api}}/api/incidencias
+Authorization: Bearer {{token}}
+### Avisos por usuario
+GET {{api}}/api/avisos
+Authorization: Bearer {{token}}
+### Credencial temporal QR
+POST {{api}}/api/credenciales/generar
+Authorization: Bearer {{token}}
+### Usuarios para staff
+GET {{api}}/api/usuarios
+Authorization: Bearer {{token}}
+### Renovar (cliente titular)
+POST {{api}}/api/prestamos/{{prestamoId}}/renovar
+Authorization: Bearer {{token}}

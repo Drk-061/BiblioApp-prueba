@@ -59,8 +59,6 @@ export default function RegistroFormulario() {
     setCampos((anterior) => ({ ...anterior, [clave]: valor }));
   };
 
-  // Segunda comprobación para no confiar en que se abrió desde registro.tsx.
-  // El servidor deberá comprobarlo también al procesar el POST de registro.
   useEffect(() => {
     let vigente = true;
     if (tipo === 'cliente') {
@@ -142,7 +140,6 @@ export default function RegistroFormulario() {
         tipoUsuario: tipo === 'cliente' ? 'CLIENTE' : 'ENCARGADO',
       });
 
-      // Limpiar las contraseñas del estado antes de regresar a login.
       setCampos(inicial);
       const mensaje = resultado.estado === 'PENDIENTE_APROBACION'
         ? 'Solicitud recibida. El administrador debe aprobar la cuenta de encargado antes de iniciar sesión.'

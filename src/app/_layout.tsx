@@ -4,7 +4,6 @@ import { LibrosProvider } from '../context/LibrosContext';
 import { PrestamosProvider } from '../context/PrestamosContext';
 
 
-// NUEVO: proveedor de autenticación
 import { SessionProvider } from '../context/SessionContext';
 
 export default function RootLayout() {

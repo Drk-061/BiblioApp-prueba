@@ -14,7 +14,6 @@ import { useSession } from '../context/SessionContext';
 import { pedirAPI, type PrestamoAPI } from '../services/api';
 import type { RolUsuario } from '../types/libros';
 
-/** Menú único original: vistas por rol autenticado, sin pantallas MVP. */
 type Accion =
   | 'prestamos' | 'avisos' | 'vencidos' | 'adeudos' | 'credencial'
   | 'historial' | 'consultas' | 'usuarios' | 'encargados' | 'multas';
@@ -26,30 +25,20 @@ type Elemento = {
   valor?: string;
 };
 
-/**
- * IMÁGENES DEL MENÚ.
- * Se conservan las rutas originales de tu proyecto en assets/recursos.
- * Los accesos nuevos reutilizan temporalmente archivos existentes:
- * - adeudos -> reloj.png
- * - multas, usuarios y encargados -> gestion.png
- * Cuando tengas los iconos definitivos, cambia únicamente su require(...).
- * Metro/Expo exige que cada require apunte a un archivo PNG existente.
- */
 const IMAGENES = {
   prestamos: require('../../assets/recursos/libro.png'),
   avisosResumen: require('../../assets/recursos/darse-cuenta.png'),
   vencidos: require('../../assets/recursos/reloj.png'),
-  adeudos: require('../../assets/recursos/reloj.png'), // Sustituir por adeudos.png
+  adeudos: require('../../assets/recursos/reloj.png'),
   credencial: require('../../assets/recursos/qr.png'),
   avisos: require('../../assets/recursos/activo.png'),
   consultas: require('../../assets/recursos/buscar.png'),
   historial: require('../../assets/recursos/historial.png'),
-  usuarios: require('../../assets/recursos/gestion.png'), // Sustituir por usuarios.png
-  encargados: require('../../assets/recursos/gestion.png'), // Sustituir por encargados.png
-  multas: require('../../assets/recursos/gestion.png'), // Sustituir por multas.png
+  usuarios: require('../../assets/recursos/gestion.png'), 
+  encargados: require('../../assets/recursos/gestion.png'), 
+  multas: require('../../assets/recursos/gestion.png'), 
 } satisfies Record<string, ImageSourcePropType>;
 
-// Todos los contadores son consultados mediante la API.
 const estadisticasComunes: Elemento[] = [
   { id: 'prestamos', titulo: 'Préstamos', imagen: IMAGENES.prestamos },
   { id: 'avisos', titulo: 'Avisos', imagen: IMAGENES.avisosResumen },
@@ -138,7 +127,6 @@ export default function MenuScreen() {
     const texto = busqueda.trim();
     Keyboard.dismiss();
     if (texto) {
-      // Libros lee `q` de los parámetros de Expo Router.
       router.push({ pathname: '/libros', params: { q: texto } });
     } else {
       router.push('/libros');
@@ -166,7 +154,6 @@ export default function MenuScreen() {
         router.push('/avisos');
         return;
       case 'adeudos':
-        // Tarjeta de consulta: no navega.
         return;
       case 'multas':
         if (rol === 'cliente') router.push('/multas');
@@ -180,7 +167,6 @@ export default function MenuScreen() {
     }
   };
 
-  // No mostrar el menú si se perdió la autenticación.
   if (cargando || !usuario) return (
     <View style={{flex:1,justifyContent:'center',alignItems:'center',backgroundColor:COLORS.navy}}>
       <ActivityIndicator color={COLORS.gold} size="large" />
@@ -197,7 +183,6 @@ export default function MenuScreen() {
           accessibilityRole="button"
           onPress={() => router.push('/perfil')}
         >
-          {/* Logotipo que ya utilizaba el menú proporcionado */}
           <Image
             source={require('../../assets/images/logo-inicio.png')}
             style={styles.logo}
@@ -263,9 +248,6 @@ export default function MenuScreen() {
                 <Text style={styles.valorEstadistica}>{valor}</Text>
               </>
             );
-
-            // Préstamos, Avisos y Adeudos son indicadores sin navegación.
-            // El botón 'Multas' del menú principal sí abre /multas.
             if (item.id === 'prestamos' || item.id === 'avisos' || item.id === 'adeudos') {
               return (
                 <View

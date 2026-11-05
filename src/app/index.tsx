@@ -24,7 +24,6 @@ export default function LoginScreen() {
   const { login, usuario, cargando } = useSession();
   const [esperando, setEsperando] = useState(false);
 
-  // También permite recuperar el menú cuando el token ya estaba guardado.
   useEffect(() => {
     if (!cargando && usuario) router.replace('/menu');
   }, [cargando, usuario]);
@@ -39,7 +38,6 @@ export default function LoginScreen() {
     try {
       await login(matricula.trim(), contrasena);
       setContrasena('');
-      // useEffect redirige al menú de Figma cuando la sesión cambia.
     } catch (e) {
       Alert.alert('No se pudo iniciar sesión', e instanceof Error ? e.message : 'Error desconocido.');
     } finally { setEsperando(false); }

@@ -4,7 +4,7 @@
     "slug": "BiblioApp-prueba",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo-unach.png",
     "scheme": "biblioappprueba",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -33,7 +33,20 @@
           "imageWidth": 76
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+       [
+          "expo-camera",
+          {
+            "cameraPermission": "BiblioApp necesita acceso a la cámara para escanear los códigos QR de usuarios y ejemplares.",
+            "recordAudioAndroid": false
+          }
+        ],
+        [
+          "expo-notifications",
+          {
+            "color": "#1C3269"
+          }
+        ]
     ],
     "experiments": {
       "typedRoutes": true,

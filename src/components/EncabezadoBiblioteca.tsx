@@ -5,7 +5,6 @@ type Props = {
   titulo: string;
 };
 
-/** Encabezado institucional reutilizable: azul + franja amarilla. */
 export default function EncabezadoBiblioteca({ titulo }: Props) {
   return (
     <View>
@@ -41,7 +40,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     flex: 1,
-    marginRight: 47, // centra el texto compensando el logotipo
+    marginRight: 47, 
   },
   franja: {
     height: 29,

@@ -26,7 +26,7 @@ export type PrestamoRegistro = {
   codigoEjemplar: string;
   matricula: string;
   nombreUsuario: string;
-  fechaPrestamo: string; // ISO YYYY-MM-DD, sin zona horaria
+  fechaPrestamo: string; 
   fechaLimite: string;
   fechaDevolucion?: string;
   estado: EstadoPrestamo;
@@ -58,7 +58,6 @@ export function puedeRenovar(p: PrestamoRegistro): boolean {
     !p.incidencia && p.multa?.estado !== 'Pendiente';
 }
 
-// Se calculan con fechas relativas para que las pruebas funcionen cualquier día.
 function datosIniciales(): PrestamoRegistro[] {
   const hoy = hoyISO();
   return [

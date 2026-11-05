@@ -16,7 +16,6 @@ const opciones = [
   { id: 'perfil', etiqueta: 'Perfil', icono: 'person-circle-outline', ruta: '/perfil' },
 ] as const;
 
-/** Barra reutilizable: la pestaña activa aparece en amarillo. */
 export default function BarraNavegacion({ actual }: Props) {
   return (
     <View style={styles.contenedor} accessibilityRole="tablist">

@@ -1,9 +1,6 @@
 import type { LibroAPI, PrestamoAPI } from './api';
 import { CATEGORIAS, type CategoriaLibro, type Libro } from '../types/libros';
 
-/**
- * Convierte las categorías de MySQL a los títulos usados en los botones de Figma.
- */
 const CATEGORIA_API: Record<string, string> = {
   MATEMATICAS: 'Matemáticas',
   CIENCIAS: 'Ciencias',
@@ -30,13 +27,12 @@ export function convertirLibro(libro: LibroAPI): Libro {
     idioma: libro.idioma ?? 'Español',
     numeroPaginas: Number(libro.numeroPaginas ?? 0),
     categoria: categoriaVisible,
-    palabrasClave: [], // El endpoint GET /api/libros aún no las devuelve.
+    palabrasClave: [], 
     ejemplaresDisponibles: Number(libro.ejemplaresDisponibles ?? 0),
-    registradoEn: '', // El endpoint GET /api/libros aún no devuelve esta fecha.
+    registradoEn: '', 
   };
 }
 
-/** Convertir fechas ISO de MySQL para mostrarlas en la aplicación. */
 export function fechaCorta(valor: string | null | undefined): string {
   if (!valor) return '—';
   const texto = String(valor);
@@ -61,7 +57,6 @@ export type FilaPrestamo = {
   estadoEjemplar: string;
 };
 
-/** Un préstamo puede incluir varios ejemplares; generamos una tarjeta por ejemplar. */
 export function filasPrestamos(prestamos: PrestamoAPI[]): FilaPrestamo[] {
   return prestamos.flatMap((prestamo) =>
     (prestamo.ejemplares ?? []).map((ejemplar) => ({

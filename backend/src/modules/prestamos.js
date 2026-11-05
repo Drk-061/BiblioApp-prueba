@@ -1,8 +1,10 @@
 import { Router } from 'express';
+import {leerQREjemplar} from '../lib/qr.js';
 import { randomUUID } from 'node:crypto';
 import { pool } from '../config/db.js';
 import { auth,roles } from '../lib/auth.js';
 import { asyncRoute,must,text } from '../lib/http.js';
+import { avisoSeguro, enviarUltimoAviso } from '../lib/notificaciones.js';
 const r=Router();r.use(auth);
 r.get('/',asyncRoute(async(req,res)=>{
   const personal=['ADMIN','ENCARGADO'].includes(req.user.cve_tipo_usuario);
@@ -34,8 +36,13 @@ r.post('/',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
   const codigos=ejemplares.map(e=>text(e,36).toUpperCase());
   must(codigos.every(Boolean) && new Set(codigos).size===codigos.length,400,'Los códigos deben ser válidos y no repetidos.');
   const id=randomUUID();
-  // El SP existente valida el rol, cliente y disponibilidad en transacción.
   await pool.query('CALL sp_registrar_prestamo(?,?,?,?)',[id,matricula,req.user.cve_usuario,JSON.stringify(codigos)]);
+  const [[registro]]=await pool.execute("SELECT DATE_FORMAT(fecha_limite,'%Y-%m-%d') AS fecha FROM prestamo WHERE cve_prestamo=?",[id]);
+  await pool.execute(`UPDATE notificacion n JOIN cat_tipo_notificacion c ON c.cve_tipo_notificacion=n.cve_tipo_notificacion
+    SET n.titulo=c.nombre_tipo,n.mensaje=REPLACE(REPLACE(c.mensaje_plantilla,'{{fecha}}',?),'{{cantidad}}',?)
+    WHERE n.cve_prestamo=? AND n.cve_usuario_destino=? AND n.cve_tipo_notificacion='PRESTAMO'`,
+    [registro.fecha,String(codigos.length),id,matricula]).catch(e=>console.error('[AVISO]',e.message));
+  await enviarUltimoAviso({destino:matricula,prestamoId:id,tipo:'PRESTAMO'});
   res.status(201).json({id,mensaje:`Préstamo registrado con ${codigos.length} ejemplar(es).`});
 }));
 r.get('/cliente/:matricula',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
@@ -52,7 +59,14 @@ r.get('/ejemplar/:codigo',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>
   must(rows.length>0&&rows[0].activo===1,404,'Ejemplar no encontrado o libro inactivo.');
   res.json({ejemplar:rows[0]});
 }));
-// Devuelve una sola copia física del préstamo; el SP protege el inventario.
+r.post('/validar-ejemplar-qr',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
+  let codigo;
+  try {codigo=leerQREjemplar(req.body?.qr);} catch(error){must(false,400,error.message);}
+  const [rows]=await pool.execute(`SELECT e.cve_ejemplar AS codigo,e.cve_estado_ejemplar AS estado,
+    l.titulo,l.activo FROM ejemplar e JOIN libro l ON l.cve_libro=e.cve_libro WHERE e.cve_ejemplar=?`,[codigo]);
+  must(rows.length>0 && rows[0].activo===1,404,'Ejemplar no existe o libro dado de baja.');
+  res.json({ejemplar:rows[0]});
+}));
 r.post('/:id/devoluciones',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
   const id=text(req.params.id,36);
   const codigo=text(req.body?.codigoEjemplar,36).toUpperCase();
@@ -61,17 +75,20 @@ r.post('/:id/devoluciones',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=
   await pool.query('CALL sp_registrar_devolucion(?,?,?,?)',[
     id,codigo,req.user.cve_usuario,fisico
   ]);
+  const [rows]=await pool.execute('SELECT cve_usuario FROM prestamo WHERE cve_prestamo=?',[id]);
+  if(rows[0]) await avisoSeguro({destino:rows[0].cve_usuario,tipo:'DEVOLUCION',prestamoId:id,
+    variables:{ejemplar:codigo},evento:`DEVOLUCION:${id}:${codigo}`});
   res.json({mensaje:'Devolución registrada correctamente.'});
 }));
 r.post('/:id/renovar',asyncRoute(async(req,res)=>{
-  // El SP valida titular, fecha, estado y número máximo de renovaciones.
   const [rows]=await pool.execute('SELECT cve_usuario FROM prestamo WHERE cve_prestamo=?',[req.params.id]);
   must(rows.length>0,404,'Préstamo inexistente');
   const titular=rows[0].cve_usuario;
   must(req.user.cve_tipo_usuario!=='CLIENTE'||req.user.cve_usuario===titular,403,'No puedes renovar préstamos ajenos');
   await pool.query('CALL sp_renovar_prestamo(?,?)',[req.params.id,titular]);
-  await pool.execute(`INSERT INTO notificacion(cve_notificacion,cve_usuario_destino,cve_prestamo,cve_tipo_notificacion,titulo,mensaje)
-    VALUES(UUID(),?,?,'SISTEMA','Préstamo renovado','Se actualizó la fecha límite de tu préstamo.')`,[titular,req.params.id]);
+  const [[limite]]=await pool.execute("SELECT DATE_FORMAT(fecha_limite,'%Y-%m-%d') AS fecha FROM prestamo WHERE cve_prestamo=?",[req.params.id]);
+  await avisoSeguro({destino:titular,tipo:'RENOVACION',prestamoId:req.params.id,
+    variables:{fecha:limite.fecha},evento:`RENOVACION:${req.params.id}:${limite.fecha}`});
   res.json({mensaje:'Préstamo renovado'});
 }));
 r.get('/:id/renovaciones',asyncRoute(async(req,res)=>{

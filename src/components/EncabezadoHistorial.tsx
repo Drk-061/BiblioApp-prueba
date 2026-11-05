@@ -5,7 +5,6 @@ import { COLORS } from '../constants/colors';
 
 type Props = { titulo: string };
 
-/** Misma cabecera azul/amarilla que en Avisos, con PNG en vez de emojis. */
 export default function EncabezadoHistorial({ titulo }: Props) {
   return (
     <View>

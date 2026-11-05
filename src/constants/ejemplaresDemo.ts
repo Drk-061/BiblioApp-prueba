@@ -1,6 +1,5 @@
 import type { Ejemplar, EstadoEjemplar } from '../types/libros';
 
-// Datos demostrativos. Cada copia física tiene una clave única.
 function crear(libroId: string, clave: string, estado: EstadoEjemplar, ubicacion = 'Estante A-03'): Ejemplar {
   return {
     id: `ej-${clave}`,

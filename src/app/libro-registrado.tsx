@@ -25,7 +25,7 @@ export default function LibroRegistrado() {
       <View style={s.panel}>
         <Text style={s.titulo}>✓ Libro registrado correctamente</Text>
         {libro ? <><Text style={s.nombre}>{libro.titulo}</Text><Text>{libro.autor}</Text>
-          <Text style={s.info}>Se guardó en MySQL. El primer ejemplar tiene un QR individual.</Text></>
+          <Text style={s.info}>Se guardó. El primer ejemplar tiene un QR individual.</Text></>
           : error ? <Text style={s.error}>{error}</Text> : <ActivityIndicator color={COLORS.navy}/>}
         <Text style={s.info}>¿Deseas registrar otro libro?</Text>
         <View style={s.fila}>

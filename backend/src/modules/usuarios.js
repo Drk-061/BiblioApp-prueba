@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { pool, tx } from '../config/db.js';
 import { auth, roles } from '../lib/auth.js';
 import { asyncRoute, must, text } from '../lib/http.js';
+import {avisoSeguro} from '../lib/notificaciones.js';
 const r=Router();r.use(auth,roles('ENCARGADO','ADMIN'));
 const resumen=`SELECT u.cve_usuario AS matricula,CONCAT_WS(' ',u.nombres,u.apellido_paterno,u.apellido_materno) AS nombre,
  u.correo,u.cve_tipo_usuario AS rol,u.estado_cuenta AS estado,
@@ -27,6 +28,9 @@ r.post('/:matricula/solicitar-baja',asyncRoute(async(req,res)=>{
    await conn.execute('INSERT INTO solicitud_baja_usuario(cve_usuario,motivo) VALUES(?,?)',[objetivo,motivo]);
    await conn.execute('INSERT INTO auditoria_sistema(cve_actor,accion,entidad,identificador_entidad) VALUES(?,?,?,?)',[req.user.cve_usuario,'SOLICITAR_BAJA','usuario',objetivo]);
  });
+ const [admins]=await pool.execute("SELECT cve_usuario AS id FROM usuario WHERE cve_tipo_usuario='ADMIN' AND estado_cuenta='ACTIVA'");
+ for (const admin of admins) await avisoSeguro({destino:admin.id,tipo:'BAJA_SOLICITADA',
+  variables:{usuario:objetivo},evento:`BAJA_SOLICITADA:${objetivo}:${admin.id}`});
  res.status(201).json({mensaje:'Solicitud enviada al administrador'});
 }));
 r.patch('/:matricula/baja',asyncRoute(async(req,res)=>{

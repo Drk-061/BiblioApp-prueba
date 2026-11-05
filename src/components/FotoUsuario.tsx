@@ -2,7 +2,6 @@ import { Image, StyleSheet } from 'react-native';
 
 type Props = { grande?: boolean };
 
-/** Imagen provisional: reemplaza el PNG sin cambiar el componente. */
 export default function FotoUsuario({ grande = false }: Props) {
   return (
     <Image

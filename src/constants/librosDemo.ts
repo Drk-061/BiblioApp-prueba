@@ -1,6 +1,5 @@
 import type { Libro } from '../types/libros';
 
-/** Catálogo demostrativo; no representa el inventario real de la UNACH. */
 export const librosIniciales: Libro[] = [
   {
     id: 'lib-001', isbn: '9780156012195', titulo: 'El Principito',

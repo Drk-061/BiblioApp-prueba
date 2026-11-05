@@ -17,8 +17,6 @@ function resumen(ejemplares: Ejemplar[], libroId: string): ResumenEjemplares {
 }
 
 export function generarValorQR(clave: string): string {
-  // QR demostrativo compatible con el lector de registrar-prestamo.tsx.
-  // No sirve como credencial de autenticación.
   return JSON.stringify({ tipo: 'ejemplar', codigoEjemplar: clave });
 }
 
@@ -38,7 +36,6 @@ type Contexto = {
 const LibrosContext = createContext<Contexto | null>(null);
 const esEncargado = () => obtenerRolDemo() === 'encargado';
 
-/** Datos locales de demostración: al reiniciar la app se restauran los registros iniciales. */
 export function LibrosProvider({ children }: PropsWithChildren) {
   const [fichas, setFichas] = useState<Libro[]>(librosIniciales);
   const [ejemplares, setEjemplares] = useState<Ejemplar[]>(ejemplaresIniciales);
@@ -72,7 +69,6 @@ export function LibrosProvider({ children }: PropsWithChildren) {
     },
     darDeBajaLibro: (id) => {
       if (!esEncargado() || !fichas.some((l) => l.id === id && l.activo)) return false;
-      // Baja lógica, no destruye las copias ni el historial.
       setFichas((prev) => prev.map((l) => l.id === id ? { ...l, activo: false } : l));
       return true;
     },

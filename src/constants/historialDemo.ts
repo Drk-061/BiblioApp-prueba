@@ -1,10 +1,5 @@
 import { usuarioDemo } from './usuarioDemo';
 
-/**
- * Datos de demostración, NO conectados a MySQL.
- * Un registro equivale al historial de un ejemplar concreto de un préstamo.
- * La misma fuente sirve para clientes y personal; el filtro se aplica según la sesión.
- */
 export type EtiquetaHistorial = 'Devuelto' | 'Con multa' | 'Renovado' | 'Con incidencia';
 export type EstadoPrestamoHistorial = 'Activo' | 'Devuelto';
 
@@ -41,7 +36,6 @@ export type RegistroHistorial = {
 const yo = { nombre: usuarioDemo.nombreCompleto, matricula: usuarioDemo.matricula };
 
 export const HISTORIAL_DEMO: RegistroHistorial[] = [
-  // Ejemplos de la cuenta actual (visibles para el rol Cliente)
   {
     id: 'his-001', prestamoId: 'PRE-001', usuario: yo,
     libro: { titulo: 'El Principito', autor: 'Antoine de Saint-Exupéry', ejemplar: 'EJ-003' },
@@ -69,7 +63,6 @@ export const HISTORIAL_DEMO: RegistroHistorial[] = [
     estadoPrestamo: 'Activo', renovaciones: 0, etiqueta: 'Con incidencia', multa: null,
     incidencia: { id: 'INC-004', motivo: 'Extravío reportado', fecha: '2026-10-18', estado: 'Resuelta' },
   },
-  // Otros usuarios, visibles únicamente al personal (Encargado / Admin)
   {
     id: 'his-005', prestamoId: 'PRE-005',
     usuario: { nombre: 'Leodan López', matricula: 'A1933527' },
@@ -102,8 +95,6 @@ export function fechaCorta(fecha: string | null): string {
   return `${dia}/${mes}/${anio}`;
 }
 
-/** En producción estos resultados deben venir de GET /api/prestamos/historial
- * con filtrado de pertenencia y rol en el servidor. */
 export function historialVisible(rol: 'cliente' | 'encargado' | 'admin') {
   return rol === 'cliente'
     ? HISTORIAL_DEMO.filter((r) => r.usuario.matricula === usuarioDemo.matricula)

@@ -15,7 +15,6 @@ export type PrestamoAPI = {
   fechaLimite: string; estado: string; renovaciones?:number;
   ejemplares: Array<{detalleId:number; codigo:string;titulo:string;autor:string;estado:string;fechaDevolucion:string|null}>;
 };
-// El secreto JWT y la contraseña MySQL no se guardan en el frontend.
 export async function pedirAPI<T>(ruta: string, opciones: RequestInit = {}, token?: string | null): Promise<T> {
   if (!API_URL) throw new Error('Configura EXPO_PUBLIC_API_URL en el archivo .env de Expo.');
   let respuesta: Response;

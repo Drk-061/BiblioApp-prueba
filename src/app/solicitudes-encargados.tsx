@@ -43,7 +43,7 @@ export default function SolicitudesEncargadosScreen() {
         {text:'Confirmar',onPress:async()=>{
           try{await pedirAPI(`/api/admin/solicitudes-encargado/${solicitud.id}`,{
             method:'PATCH',body:JSON.stringify({aprobar:decision==='Aprobada'})
-          },token);await cargar();Alert.alert('Solicitud procesada','Los datos se actualizaron en MySQL.');}
+          },token);await cargar();Alert.alert('Solicitud procesada','Los datos se actualizaron.');}
           catch(e){Alert.alert('Error',(e as Error).message)}
         }}
       ]);

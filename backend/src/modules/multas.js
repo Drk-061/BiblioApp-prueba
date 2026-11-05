@@ -3,6 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {pool,tx} from '../config/db.js';
 import {auth,roles} from '../lib/auth.js';
 import {asyncRoute,must} from '../lib/http.js';
+import {avisoSeguro} from '../lib/notificaciones.js';
 const r=Router();r.use(auth);
 const select=`SELECT m.cve_multa AS id,m.cve_prestamo AS prestamoId,m.cve_detalle AS detalleId,m.motivo,m.descripcion,
  m.fecha_emision AS fechaGenerada,m.monto,m.cve_estado_pago AS estado,m.fecha_pago AS fechaPago,
@@ -30,7 +31,7 @@ r.post('/',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
  must(['RETRASO','EXTRAVIO','DANIO','OTRO'].includes(motivo),400,'Motivo de multa inválido');
  must(Number.isFinite(monto)&&monto>0&&monto<=100000,400,'Monto inválido');
  const id=randomUUID();
- await tx(async c=>{
+ const meta=await tx(async c=>{
    const [detalles]=await c.execute('SELECT d.cve_prestamo,p.cve_usuario FROM prestamo_detalle d JOIN prestamo p ON p.cve_prestamo=d.cve_prestamo WHERE d.cve_detalle=? FOR UPDATE',[detalleId]);
    must(detalles.length,404,'Detalle de préstamo inexistente');
    const {cve_prestamo,cve_usuario}=detalles[0];
@@ -38,9 +39,11 @@ r.post('/',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
    must(!previas.length,409,'Ya existe una multa pendiente por el mismo motivo');
    await c.execute('INSERT INTO multa(cve_multa,cve_prestamo,cve_detalle,motivo,descripcion,monto) VALUES(?,?,?,?,?,?)',
     [id,cve_prestamo,detalleId,motivo,String(req.body?.descripcion||'Registro de multa por biblioteca').slice(0,500),monto]);
-   await c.execute("INSERT INTO notificacion(cve_notificacion,cve_usuario_destino,cve_prestamo,cve_tipo_notificacion,titulo,mensaje) VALUES(UUID(),?,?,'MULTA','Nueva multa','Se registró una multa en tu cuenta. Consulta sus detalles.')",[cve_usuario,cve_prestamo]);
    await c.execute('INSERT INTO auditoria_sistema(cve_actor,accion,entidad,identificador_entidad) VALUES(?,?,?,?)',[req.user.cve_usuario,'CREAR_MULTA','multa',id]);
+   return {cve_usuario,cve_prestamo};
  });
+ await avisoSeguro({destino:meta.cve_usuario,tipo:'MULTA',prestamoId:meta.cve_prestamo,
+  variables:{monto:monto.toFixed(2),motivo},evento:`MULTA:${id}`});
  res.status(201).json({id,mensaje:'Multa registrada'});
 }));
 r.patch('/:id/pagar',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
@@ -49,6 +52,11 @@ r.patch('/:id/pagar',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
    must(rows.length,404,'Multa inexistente');must(rows[0].cve_estado_pago==='PENDIENTE',409,'La multa ya no está pendiente');
    await c.execute("UPDATE multa SET cve_estado_pago='PAGADA',fecha_pago=NOW(),referencia_pago=? WHERE cve_multa=?",[String(req.body?.referencia||'Pago confirmado en biblioteca').slice(0,120),req.params.id]);
    await c.execute('INSERT INTO auditoria_sistema(cve_actor,accion,entidad,identificador_entidad) VALUES(?,?,?,?)',[req.user.cve_usuario,'PAGAR_MULTA','multa',req.params.id]);
- });res.json({mensaje:'Pago registrado'});
+ });
+ const [pagos]=await pool.execute(`SELECT m.monto,p.cve_usuario,p.cve_prestamo FROM multa m
+  JOIN prestamo p ON p.cve_prestamo=m.cve_prestamo WHERE m.cve_multa=?`,[req.params.id]);
+ if(pagos[0]) await avisoSeguro({destino:pagos[0].cve_usuario,tipo:'MULTA_PAGADA',prestamoId:pagos[0].cve_prestamo,
+  variables:{monto:Number(pagos[0].monto).toFixed(2)},evento:`MULTA_PAGADA:${req.params.id}`});
+ res.json({mensaje:'Pago registrado'});
 }));
 export default r;

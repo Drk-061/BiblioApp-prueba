@@ -1,11 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type { ResultadoAccion, RolSesion, SolicitudBaja, SolicitudRegistroEncargado, UsuarioGestion } from '../types/usuarios';
 
-/**
- * Almacén compartido TEMPORAL para la demostración.
- * Se mantiene al navegar entre pantallas, pero se reinicia al recargar Expo.
- * En producción, estas operaciones se sustituyen por peticiones a Node.js.
- */
+
 type Estado = {
   usuarios: UsuarioGestion[];
   solicitudesBaja: SolicitudBaja[];
@@ -81,7 +77,6 @@ export function validarBaja(usuario: UsuarioGestion): string | null {
   return null;
 }
 
-/** Baja lógica. Admin: cliente/encargado. Encargado: solamente cliente. */
 export function darBajaUsuario(id: string, rol: RolSesion): ResultadoAccion {
   const usuario = buscarUsuario(id);
   if (!usuario) return { ok: false, mensaje: 'Usuario no encontrado.' };
@@ -97,7 +92,6 @@ export function darBajaUsuario(id: string, rol: RolSesion): ResultadoAccion {
   return { ok: true, mensaje: 'La baja se realizó correctamente.' };
 }
 
-/** Solicitud que debe aprobar el administrador, nunca da de baja al instante. */
 export function solicitarBajaEncargado(id: string, rol: RolSesion): ResultadoAccion {
   if (rol !== 'encargado') return { ok: false, mensaje: 'Solo un encargado puede enviar esta solicitud.' };
   const usuario = buscarUsuario(id);
@@ -153,7 +147,6 @@ export function resolverSolicitudBaja(
 }
 
 
-/** Configuración de REGISTRO en el prototipo; la API será la fuente real. */
 export function registroEncargadoHabilitadoDemo(): boolean {
   return estado.registroEncargadosHabilitado;
 }
@@ -169,7 +162,6 @@ export function cambiarRegistroEncargadosDemo(
   return { ok: true, mensaje: habilitado ? 'Registro de encargados habilitado.' : 'Registro de encargados deshabilitado.' };
 }
 
-/** Nunca guardar contraseñas de formularios en el almacén de demostración. */
 export function crearSolicitudRegistroEncargadoDemo(
   matricula: string,
   nombre: string
@@ -195,7 +187,6 @@ export function crearSolicitudRegistroEncargadoDemo(
   return { ok: true, mensaje: 'Solicitud recibida, pendiente de aprobación.' };
 }
 
-/** Aprobar solo crea un perfil de prueba: NO crea credenciales reales. */
 export function resolverSolicitudRegistroEncargadoDemo(
   id: string,
   decision: 'Aprobada' | 'Rechazada',

@@ -5,7 +5,6 @@ import { COLORS } from '../constants/colors';
 
 type Props = { titulo: string };
 
-/** Encabezado reutilizable que conserva los colores institucionales y una imagen para avisos. */
 export default function EncabezadoGestion({ titulo }: Props) {
   return (
     <>

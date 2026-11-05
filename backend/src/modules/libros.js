@@ -1,11 +1,12 @@
 import { Router } from 'express';
+import {qrEjemplar} from '../lib/qr.js';
 import { randomUUID, randomBytes } from 'node:crypto';
 import { pool, tx } from '../config/db.js';
 import { auth,roles } from '../lib/auth.js';
 import { asyncRoute,assertString,must,text } from '../lib/http.js';
 const r=Router();
 const categorías = new Set(['MATEMATICAS','CIENCIAS','PROGRAMACION','LITERATURA','OTROS']);
-const codQR=codigo=>JSON.stringify({ tipo:'ejemplar', codigoEjemplar:codigo });
+const codQR=qrEjemplar;
 const codigoAleatorio=()=>`EJ-${randomBytes(6).toString('hex').toUpperCase()}`;
 export function validateLibro(b) {
   const isbn=text(b.isbn,17).replace(/[\s-]/g,'')||null;
@@ -107,7 +108,6 @@ r.put('/:id',auth,roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
       [p.isbn,p.titulo,p.editorial,p.edicion,p.anio,p.idioma,p.paginas,p.categoria,req.params.id]);
     const [autores]=await conn.execute('SELECT cve_autor FROM libro_autor WHERE cve_libro=? ORDER BY orden_autoria LIMIT 1',[req.params.id]);
     if(autores.length) {
-      // No modificar la fila de autor compartida con otros libros.
       const [nuevoAutor]=await conn.execute('INSERT INTO autor(nombre_autor) VALUES(?)',[p.autor]);
       await conn.execute('UPDATE libro_autor SET cve_autor=? WHERE cve_libro=? AND cve_autor=?',
         [nuevoAutor.insertId,req.params.id,autores[0].cve_autor]);

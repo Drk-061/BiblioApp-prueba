@@ -3,6 +3,7 @@ import {randomUUID} from 'node:crypto';
 import {pool,tx} from '../config/db.js';
 import {auth,roles} from '../lib/auth.js';
 import {asyncRoute,must,text} from '../lib/http.js';
+import {avisoSeguro,enviarUltimoAviso} from '../lib/notificaciones.js';
 const r=Router();r.use(auth);
 const select=`SELECT i.cve_reporte AS id,i.cve_detalle AS detalleId,i.cve_usuario_reporta AS reportadoPor,
  i.fecha_reporte AS fechaReporte,i.descripcion,i.cve_estado_incidencia AS estado,i.fecha_resolucion AS fechaResolucion,i.resolucion,
@@ -30,6 +31,9 @@ r.post('/',asyncRoute(async(req,res)=>{
  must(req.user.cve_tipo_usuario!=='CLIENTE'||r0.titular===req.user.cve_usuario,403,'Solo puedes reportar tus ejemplares');
  const id=randomUUID();
  await pool.query('CALL sp_reportar_extravio(?,?,?,?)',[id,detalleId,r0.titular,descripcion]);
+ const [staff]=await pool.execute(`SELECT DISTINCT n.cve_usuario_destino AS destino,n.cve_prestamo AS prestamoId
+  FROM notificacion n WHERE n.mensaje=? AND n.cve_tipo_notificacion='EXTRAVIO'`,[`Revisar reporte ${id}`]);
+ for (const x of staff) await enviarUltimoAviso({destino:x.destino,prestamoId:x.prestamoId,tipo:'EXTRAVIO'});
  res.status(201).json({id,mensaje:'Reporte enviado'});
 }));
 r.patch('/:id/seguimiento',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
@@ -50,8 +54,9 @@ r.patch('/:id/seguimiento',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=
  }
  const [destinos]=await pool.execute(`SELECT p.cve_usuario,p.cve_prestamo FROM incidencia_extravio i
   JOIN prestamo_detalle d ON d.cve_detalle=i.cve_detalle JOIN prestamo p ON p.cve_prestamo=d.cve_prestamo WHERE i.cve_reporte=?`,[req.params.id]);
- if(destinos.length) await pool.execute(`INSERT INTO notificacion(cve_notificacion,cve_usuario_destino,cve_prestamo,cve_tipo_notificacion,titulo,mensaje)
-  VALUES(UUID(),?,?,'EXTRAVIO','Seguimiento de incidencia','Se actualizó el seguimiento de tu reporte de extravío.')`,[destinos[0].cve_usuario,destinos[0].cve_prestamo]);
+ if(destinos.length) await avisoSeguro({destino:destinos[0].cve_usuario,
+  tipo:'INCIDENCIA_RESUELTA',prestamoId:destinos[0].cve_prestamo,
+  variables:{reporte:req.params.id,estado},evento:`INCIDENCIA:${req.params.id}:${estado}`});
  res.json({mensaje:'Seguimiento actualizado'});
 }));
 export default r;

@@ -27,7 +27,6 @@ export type ResultadoAccion =
   | { ok: true; mensaje: string }
   | { ok: false; mensaje: string };
 
-/** Solicitud de alta de Encargado. Todavía no permite iniciar sesión. */
 export interface SolicitudRegistroEncargado {
   id: string;
   nombre: string;

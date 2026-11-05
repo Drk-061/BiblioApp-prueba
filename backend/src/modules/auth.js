@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { pool, tx } from '../config/db.js';
 import { auth, issueToken, publicUser } from '../lib/auth.js';
 import { asyncRoute, assertString, HttpError, must, text } from '../lib/http.js';
+import {avisoSeguro} from '../lib/notificaciones.js';
 const r=Router();
 const idPattern=/^[A-Z0-9-]{5,30}$/;
 const mailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -36,7 +37,12 @@ r.post('/auth/registro',asyncRoute(async (req,res)=>{
       VALUES (?,?,?,?,?,?,?,?)`, [p.matricula,p.nombres,p.apellidoPaterno,p.apellidoMaterno,p.correo,hash,p.tipoUsuario,estado]);
     if (p.tipoUsuario==='ENCARGADO') await conn.execute('INSERT INTO solicitud_encargado(cve_usuario) VALUES(?)',[p.matricula]);
   });
-  res.status(201).json({estado: estado==='ACTIVA'?'REGISTRADO':'PENDIENTE_APROBACION',mensaje:estado==='ACTIVA'?'Cliente registrado.':'Solicitud enviada al administrador.'});
+  if(p.tipoUsuario==='ENCARGADO') {
+    const [admins]=await pool.execute("SELECT cve_usuario AS id FROM usuario WHERE cve_tipo_usuario='ADMIN' AND estado_cuenta='ACTIVA'");
+    for(const admin of admins) await avisoSeguro({destino:admin.id,tipo:'SOLICITUD_ENCARGADO',
+      variables:{usuario:p.matricula},evento:`SOLICITUD_ENCARGADO:${p.matricula}:${admin.id}`});
+  }
+  res.status(201).json({estado: estado==='ACTIVA' ?'REGISTRADO':'PENDIENTE_APROBACION',mensaje:estado==='ACTIVA'?'Cliente registrado.':'Solicitud enviada al administrador.'});
 }));
 r.post('/auth/login',asyncRoute(async(req,res)=>{
   const matricula=text(req.body?.matricula,30).toUpperCase();

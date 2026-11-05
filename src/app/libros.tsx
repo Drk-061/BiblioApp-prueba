@@ -54,7 +54,6 @@ export default function LibrosScreen() {
     });
   }, [libros, busqueda, categoria]);
 
-  // Ancho adaptable a los teléfonos, manteniendo dos libros por fila.
   const anchoPortada = Math.max(110, Math.min(154, (width - 90) / 2));
 
   return (

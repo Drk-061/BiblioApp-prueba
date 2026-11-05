@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
   Alert,
   Pressable,
@@ -47,12 +47,9 @@ function Accion({ titulo, icono, alPresionar }: AccionProps) {
 }
 
 export default function PerfilScreen() {
-  // /perfil abre Datos; /perfil?tab=qr abre directamente la credencial.
   const { tab } = useLocalSearchParams<{ tab?: string }>();
   const [pestana, setPestana] = useState<Pestaña>(tab === 'qr' ? 'qr' : 'datos');
 
-  // Sincroniza al abrir la pantalla o regresar a ella desde otra ruta.
-  // El menú envía /perfil?tab=qr para entrar directamente a la credencial.
   useFocusEffect(
     useCallback(() => {
       setPestana(tab === 'qr' ? 'qr' : 'datos');
@@ -60,8 +57,7 @@ export default function PerfilScreen() {
   );
   const { usuario, token, logout } = useSession();
   const [conteos, setConteos] = useState<{prestados:number;devueltos:number} | null>(null);
-  // Los totales de préstamos se consultan desde Node.js; no utilizar
-  // Las cantidades se consultan desde la API.
+  
   useFocusEffect(useCallback(() => {
     if (!token || !usuario) return;
     let activo = true;
@@ -85,6 +81,15 @@ export default function PerfilScreen() {
     }catch(e){setQrError((e as Error).message)}
   },[token]);
   useFocusEffect(useCallback(()=>{if(pestana==='qr'&&!codigoQrReal)void generarQr()},[pestana,codigoQrReal,generarQr]));
+  
+  useEffect(()=>{
+    if(pestana!=='qr' || !token || !qrExpira)return;
+    const fecha=new Date(qrExpira).getTime();
+    if(!Number.isFinite(fecha))return;
+    const demora=Math.max(2000,fecha-Date.now()-20000);
+    const temporizador=setTimeout(()=>{void generarQr()},demora);
+    return ()=>clearTimeout(temporizador);
+  },[pestana,qrExpira,token,generarQr]);
   const { width } = useWindowDimensions();
   const dimensionQR = Math.round(Math.min(210, Math.max(145, width - 124)));
 

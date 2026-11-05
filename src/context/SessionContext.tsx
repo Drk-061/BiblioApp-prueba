@@ -1,7 +1,7 @@
 import React, { createContext,useContext,useEffect,useState, type ReactNode } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { pedirAPI, type Usuario } from '../services/api';
-import { setRolSesion } from '../constants/rolDemo';
+import {desvincularNotificacionesPush} from '../services/push';
 const TOKEN_KEY='biblioapp_mvp_token';
 type Sesion = {
   token: string|null; usuario: Usuario|null; cargando:boolean;
@@ -20,9 +20,9 @@ export function SessionProvider({children}:{children:ReactNode}) {
         const guardado=await SecureStore.getItemAsync(TOKEN_KEY);
         if (guardado) {
           const d=await pedirAPI<{usuario:Usuario}>('/api/auth/me',{},guardado);
-          if(vivo){setRolSesion(d.usuario.rol);setToken(guardado);setUsuario(d.usuario);}
+          if(vivo){setToken(guardado);setUsuario(d.usuario);}
         }
-      } catch { if(vivo) setRolSesion(null); await SecureStore.deleteItemAsync(TOKEN_KEY).catch(()=>{}); }
+      } catch { await SecureStore.deleteItemAsync(TOKEN_KEY).catch(()=>{}); }
       finally { if(vivo)setCargando(false); }
     })();
     return()=>{vivo=false;};
@@ -32,11 +32,12 @@ export function SessionProvider({children}:{children:ReactNode}) {
       method:'POST',body:JSON.stringify({matricula,contrasena})
     });
     await SecureStore.setItemAsync(TOKEN_KEY,r.token);
-    setRolSesion(r.usuario.rol);setToken(r.token);setUsuario(r.usuario);
+    setToken(r.token);setUsuario(r.usuario);
   };
   const logout=async()=>{
+    if(token){ try { await desvincularNotificacionesPush(token); } catch(e) { console.warn('No se pudo desvincular push:',e); } }
     await SecureStore.deleteItemAsync(TOKEN_KEY);
-    setRolSesion(null);setToken(null);setUsuario(null);
+    setToken(null);setUsuario(null);
   };
   return <Contexto.Provider value={{token,usuario,cargando,login,logout}}>{children}</Contexto.Provider>;
 }

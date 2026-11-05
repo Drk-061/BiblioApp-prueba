@@ -8,6 +8,7 @@ import { COLORS } from '../constants/colors';
 import { useSession } from '../context/SessionContext';
 import { pedirAPI,type PrestamoAPI } from '../services/api';
 import {fechaCorta} from '../services/vistasReales';
+import EscanerQR from '../components/EscanerQR';
 export default function DevolucionPrestamo(){
   const {id,codigo}=useLocalSearchParams<{id?:string;codigo?:string}>();
   const {token,usuario}=useSession();
@@ -15,6 +16,8 @@ export default function DevolucionPrestamo(){
   const [fisico,setFisico]=useState<'DISPONIBLE'|'DANADO'>('DISPONIBLE');
   const [guardando,setGuardando]=useState(false);
   const [error,setError]=useState('');
+  const [escanear,setEscanear]=useState(false);
+  const [confirmadoQR,setConfirmadoQR]=useState(false);
   useFocusEffect(useCallback(()=>{
     let vivo=true;
     pedirAPI<{prestamos:PrestamoAPI[]}>('/api/prestamos',{},token)
@@ -40,6 +43,10 @@ export default function DevolucionPrestamo(){
         <View style={s.caja}><Text>{prestamo.nombreUsuario}</Text><Text>Matrícula: {prestamo.matricula}</Text></View></View>
         <View style={s.panel}><Text style={s.titulo}>• Identificar ejemplar</Text>
           <View style={s.caja}><Text>{ejemplar.titulo}</Text><Text>{ejemplar.autor}</Text><Text>Ejemplar: {ejemplar.codigo}</Text><Text>Estado: {ejemplar.estado}</Text></View>
+          <Pressable style={s.opcion} onPress={()=>setEscanear(true)}>
+            <Text>Escanear QR para comprobar ejemplar</Text>
+          </Pressable>
+          {confirmadoQR ? <Text style={{color:'#218455'}}>QR verificado para este ejemplar</Text> : null}
         </View>
         <View style={s.panel}><Text style={s.titulo}>• Datos del préstamo</Text>
           <View style={s.caja}><Text>Fecha de préstamo: {fechaCorta(prestamo.fechaPrestamo)}</Text></View>
@@ -52,6 +59,14 @@ export default function DevolucionPrestamo(){
               {text:'Cancelar',style:'cancel'},{text:'Confirmar',onPress:guardar}])} disabled={guardando||ejemplar.estado!=='PRESTADO'}><Text>{guardando?'Guardando...':'Confirmar devolución'}</Text></Pressable></View>
         </View></>}
     </ScrollView><BarraNavegacion actual="prestamos" />
+    <EscanerQR visible={escanear} titulo="Comprobar ejemplar" cerrar={()=>setEscanear(false)}
+      onLeer={async contenido=>{
+        const respuesta=await pedirAPI<{ejemplar:{codigo:string}}>(
+          '/api/prestamos/validar-ejemplar-qr',
+          {method:'POST',body:JSON.stringify({qr:contenido})},token);
+        if(respuesta.ejemplar.codigo!==codigo) throw new Error('Este QR pertenece a otro ejemplar.');
+        setConfirmadoQR(true);
+      }}/>
   </SafeAreaView>;
 }
 const s=StyleSheet.create({pagina:{flex:1,backgroundColor:COLORS.navy},fondo:{flex:1,backgroundColor:'#F4F5F7'},interior:{padding:15},panel:{backgroundColor:'#FFF',borderRadius:12,padding:14,marginBottom:14,gap:9},titulo:{fontWeight:'800',color:COLORS.navy,fontSize:15},caja:{padding:12,borderRadius:8,borderWidth:1,borderColor:'#AAB7D1'},fila:{flexDirection:'row',gap:10},opcion:{flex:1,borderWidth:1,borderColor:COLORS.navy,borderRadius:7,padding:9,alignItems:'center'},opcionActiva:{backgroundColor:'#BCD8FF'},amarillo:{flex:1,backgroundColor:COLORS.gold,borderRadius:7,alignItems:'center',padding:9},blanco:{color:'#FFF'}});

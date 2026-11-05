@@ -6,7 +6,6 @@ export type CategoriaLibro = (typeof CATEGORIAS)[number];
 export type RolUsuario = 'cliente' | 'encargado'|'admin' ;
 export type EstadoEjemplar = 'Disponible' | 'Prestado' | 'Extraviado' | 'Dañado';
 
-/** Ficha bibliográfica. La disponibilidad se calcula a partir de los ejemplares. */
 export type Libro = {
   id: string;
   isbn: string;

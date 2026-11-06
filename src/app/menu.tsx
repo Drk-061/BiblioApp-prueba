@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BarraNavegacion from '../components/BarraNavegacion';
+import CampanaNotificaciones from '../components/CampanaNotificaciones';
 import { COLORS } from '../constants/colors';
 import { useSession } from '../context/SessionContext';
 import { pedirAPI, type PrestamoAPI } from '../services/api';
@@ -29,7 +30,7 @@ const IMAGENES = {
   prestamos: require('../../assets/recursos/libro.png'),
   avisosResumen: require('../../assets/recursos/darse-cuenta.png'),
   vencidos: require('../../assets/recursos/reloj.png'),
-  adeudos: require('../../assets/recursos/reloj.png'),
+  adeudos: require('../../assets/recursos/reloj.png'), 
   credencial: require('../../assets/recursos/qr.png'),
   avisos: require('../../assets/recursos/activo.png'),
   consultas: require('../../assets/recursos/buscar.png'),
@@ -190,7 +191,7 @@ export default function MenuScreen() {
           />
         </Pressable>
         <Text style={styles.tituloEncabezado}>Inicio</Text>
-        <View style={styles.campana} />
+        <View style={styles.campana}><CampanaNotificaciones /></View>
       </View>
 
       <View style={styles.franjaAmarilla}>

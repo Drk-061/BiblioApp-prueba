@@ -2,17 +2,26 @@ import {Router} from 'express';
 import {randomUUID} from 'node:crypto';
 import {pool,tx} from '../config/db.js';
 import {auth,roles} from '../lib/auth.js';
-import {asyncRoute,must} from '../lib/http.js';
+import {asyncRoute,must,text} from '../lib/http.js';
 import {avisoSeguro} from '../lib/notificaciones.js';
 const r=Router();r.use(auth);
 const select=`SELECT m.cve_multa AS id,m.cve_prestamo AS prestamoId,m.cve_detalle AS detalleId,m.motivo,m.descripcion,
  m.fecha_emision AS fechaGenerada,m.monto,m.cve_estado_pago AS estado,m.fecha_pago AS fechaPago,
  p.cve_usuario AS matricula,CONCAT_WS(' ',u.nombres,u.apellido_paterno,u.apellido_materno) AS nombre,
  p.fecha_limite AS fechaLimite,d.fecha_devolucion AS fechaDevolucion,e.cve_ejemplar AS codigoEjemplar,l.titulo,l.editorial,
- GREATEST(DATEDIFF(COALESCE(d.fecha_devolucion,CURRENT_DATE()),p.fecha_limite),0) AS diasRetraso
+ GREATEST(DATEDIFF(COALESCE(d.fecha_devolucion,CURRENT_DATE()),p.fecha_limite),0) AS diasRetraso,
+ seg.estado AS estadoSeguimientoMulta, seg.mensaje AS mensajeSeguimientoMulta,
+ seg.fecha AS fechaSeguimientoMulta,
+ i.cve_reporte AS incidenciaId, i.cve_estado_incidencia AS estadoIncidencia,
+ i.resolucion AS mensajeSeguimientoIncidencia, i.fecha_resolucion AS fechaResolucionIncidencia
  FROM multa m JOIN prestamo p ON p.cve_prestamo=m.cve_prestamo JOIN usuario u ON u.cve_usuario=p.cve_usuario
  LEFT JOIN prestamo_detalle d ON d.cve_detalle=m.cve_detalle LEFT JOIN ejemplar e ON e.cve_ejemplar=d.cve_ejemplar
- LEFT JOIN libro l ON l.cve_libro=e.cve_libro`;
+ LEFT JOIN libro l ON l.cve_libro=e.cve_libro
+ LEFT JOIN multa_seguimiento seg ON seg.id=(
+    SELECT x.id FROM multa_seguimiento x WHERE x.cve_multa=m.cve_multa ORDER BY x.id DESC LIMIT 1)
+ LEFT JOIN incidencia_extravio i ON i.cve_reporte=(
+    SELECT x.cve_reporte FROM incidencia_extravio x WHERE x.cve_detalle=m.cve_detalle
+    ORDER BY x.fecha_reporte DESC, x.cve_reporte DESC LIMIT 1)`;
 r.get('/',asyncRoute(async(req,res)=>{
  const staff=['ADMIN','ENCARGADO'].includes(req.user.cve_tipo_usuario);
  const [rows]=await pool.execute(`${select} ${staff?'':'WHERE p.cve_usuario=?'} ORDER BY m.fecha_emision DESC LIMIT 300`,staff?[]:[req.user.cve_usuario]);
@@ -45,6 +54,28 @@ r.post('/',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
  await avisoSeguro({destino:meta.cve_usuario,tipo:'MULTA',prestamoId:meta.cve_prestamo,
   variables:{monto:monto.toFixed(2),motivo},evento:`MULTA:${id}`});
  res.status(201).json({id,mensaje:'Multa registrada'});
+}));
+r.patch('/:id/seguimiento',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
+ const estado=req.body?.estado;
+ const mensaje=text(req.body?.mensaje,1001);
+ must(['EN_PROCESO','RESUELTA'].includes(estado),400,'Selecciona un estado de seguimiento válido');
+ must(mensaje.length>=5 && mensaje.length<=1000,400,'El mensaje debe tener de 5 a 1000 caracteres');
+ const datos=await tx(async c=>{
+   const [rows]=await c.execute(`SELECT m.cve_multa, m.cve_prestamo, p.cve_usuario AS cliente
+     FROM multa m JOIN prestamo p ON p.cve_prestamo=m.cve_prestamo
+     WHERE m.cve_multa=? FOR UPDATE`,[req.params.id]);
+   must(rows.length,404,'Multa no encontrada');
+   const [agregado]=await c.execute(`INSERT INTO multa_seguimiento
+      (cve_multa,cve_encargado,estado,mensaje) VALUES (?,?,?,?)`,
+      [req.params.id,req.user.cve_usuario,estado,mensaje]);
+   await c.execute(`INSERT INTO auditoria_sistema(cve_actor,accion,entidad,identificador_entidad)
+     VALUES(?,?,?,?)`,[req.user.cve_usuario,'SEGUIMIENTO_MULTA','multa',req.params.id]);
+   return {...rows[0],seguimientoId:agregado.insertId};
+ });
+ await avisoSeguro({destino:datos.cliente,tipo:'SISTEMA',prestamoId:datos.cve_prestamo,
+   variables:{mensaje:`Seguimiento de multa ${estado==='RESUELTA'?'resuelto':'en proceso'}: ${mensaje.slice(0,180)}`},
+   evento:`SEGUIMIENTO_MULTA:${req.params.id}:${datos.seguimientoId}`});
+ res.json({mensaje:'Seguimiento actualizado',seguimientoId:datos.seguimientoId});
 }));
 r.patch('/:id/pagar',roles('ENCARGADO','ADMIN'),asyncRoute(async(req,res)=>{
  await tx(async c=>{

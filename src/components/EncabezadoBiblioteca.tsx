@@ -1,5 +1,6 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { COLORS } from '../constants/colors';
+import CampanaNotificaciones from './CampanaNotificaciones';
 
 type Props = {
   titulo: string;
@@ -16,6 +17,7 @@ export default function EncabezadoBiblioteca({ titulo }: Props) {
           accessibilityLabel="Emblema de la Biblioteca Universitaria"
         />
         <Text style={styles.titulo}>{titulo}</Text>
+        <CampanaNotificaciones />
       </View>
       <View style={styles.franja}>
         <Text style={styles.institucion}>BIBLIOTECA UNIVERSITARIA</Text>
@@ -40,7 +42,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     flex: 1,
-    marginRight: 47, 
   },
   franja: {
     height: 29,

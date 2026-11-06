@@ -1,7 +1,8 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { COLORS } from '../constants/colors';
+import CampanaNotificaciones from './CampanaNotificaciones';
 
 type Props = { titulo: string };
 
@@ -17,17 +18,7 @@ export default function EncabezadoGestion({ titulo }: Props) {
           <Ionicons name="arrow-back" size={24} color={COLORS.white} />
         </Pressable>
         <Text style={styles.titulo} numberOfLines={1}>{titulo}</Text>
-        <Pressable
-          style={styles.lateral}
-          onPress={() => router.push('/avisos')}
-          accessibilityLabel="Abrir avisos"
-        >
-          <Image
-            source={require('../../assets/recursos/biblioapp-campana-demo.png')}
-            resizeMode="contain"
-            style={styles.campana}
-          />
-        </Pressable>
+        <CampanaNotificaciones />
       </View>
       <View style={styles.franja}>
         <Text style={styles.franjaTitulo}>BIBLIOTECA UNIVERSITARIA</Text>
@@ -45,7 +36,6 @@ const styles = StyleSheet.create({
   },
   lateral: { width: 40, height: 42, alignItems: 'center', justifyContent: 'center' },
   titulo: { flex: 1, color: COLORS.white, fontWeight: '800', fontSize: 17, textAlign: 'center' },
-  campana: { width: 25, height: 28 },
   franja: {
     backgroundColor: COLORS.gold, minHeight: 26,
     alignItems: 'center', justifyContent: 'center', paddingVertical: 2,
